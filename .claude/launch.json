@@ -1,0 +1,32 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "minions-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
+      "port": 3000
+    },
+    {
+      "name": "minions-dev-sso",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev:sso"
+      ],
+      "port": 3000
+    },
+    {
+      "name": "minions-share",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "share"
+      ],
+      "port": 3000
+    }
+  ]
+}

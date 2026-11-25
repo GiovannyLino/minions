@@ -1,0 +1,16 @@
+# Postgres real (homologação local). Em dev o Minions usa PGlite por padrão.
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_DB: minions
+      POSTGRES_USER: minions
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me-local-only}
+    ports: ["127.0.0.1:5432:5432"]
+    volumes: [minions-pg:/var/lib/postgresql/data]
+  clamav:
+    image: clamav/clamav:stable
+    ports: ["127.0.0.1:3310:3310"]
+    profiles: ["scan"]
+volumes:
+  minions-pg: {}
