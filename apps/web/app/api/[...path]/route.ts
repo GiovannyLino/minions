@@ -1,10 +1,13 @@
 import { cookies } from 'next/headers';
-import type { NextRequest } from 'next/server';
-import { API_URL, SESSION_COOKIE } from '@/lib/session';
+import { after, type NextRequest } from 'next/server';
+import { callApi } from '@/lib/api-transport';
+import { clientIpFrom } from '@/lib/client-ip';
+import { drainInBackground, isEmbedded } from '@/lib/embedded';
+import { SESSION_COOKIE } from '@/lib/session';
 
 /**
  * BFF: o navegador fala apenas com esta rota (mesma origem, cookie httpOnly).
- * - Destino fixo (API_URL) e somente caminhos /v1/* — o cliente não escolhe o host.
+ * - Destino fixo (API_URL ou API embutida) e somente caminhos /v1/* — o cliente não escolhe o host.
  * - Converte o cookie de sessão em Authorization: Bearer; não repassa cookies nem outros headers.
  * - Bloqueia requisições de outra origem em métodos que alteram estado (CSRF).
  * - Faz streaming do corpo (SSE do chat, uploads e downloads).
@@ -39,23 +42,22 @@ async function handle(request: NextRequest, ctx: { params: Promise<{ path: strin
     const v = request.headers.get(h);
     if (v) headers.set(h, v);
   }
-  const fwd = request.headers.get('cf-connecting-ip') ?? request.headers.get('x-forwarded-for') ?? '127.0.0.1';
-  headers.set('x-forwarded-for', fwd.split(',')[0]!.trim());
+  headers.set('x-forwarded-for', clientIpFrom(request.headers));
 
-  const target = new URL(`/${path.join('/')}${request.nextUrl.search}`, API_URL);
   let upstream: Response;
   try {
-    upstream = await fetch(target, {
+    upstream = await callApi(`/${path.join('/')}${request.nextUrl.search}`, {
       method: request.method,
       headers,
       body: request.method === 'GET' || request.method === 'HEAD' ? undefined : request.body,
       redirect: 'error',
       cache: 'no-store',
       signal: request.signal,
-      // @ts-expect-error — necessário para enviar corpo em streaming no fetch do Node.
+      // Necessário para enviar corpo em streaming no fetch do Node.
       duplex: 'half',
     });
-  } catch {
+  } catch (err) {
+    console.error('[minions] API indisponível:', (err as Error).message);
     return Response.json({ error: { code: 'bad_gateway', message: 'Serviço do Minions indisponível no momento' } }, { status: 502 });
   }
 
@@ -68,6 +70,8 @@ async function handle(request: NextRequest, ctx: { params: Promise<{ path: strin
     out.set('cache-control', 'no-cache, no-transform');
     out.set('x-accel-buffering', 'no');
   }
+  // Sem worker permanente na Vercel: novos uploads são indexados logo após a resposta.
+  if (isEmbedded() && upstream.ok && request.method === 'POST' && path[1] === 'documents') after(() => drainInBackground());
   return new Response(upstream.body, { status: upstream.status, headers: out });
 }
 
@@ -77,3 +81,5 @@ export const PUT = handle;
 export const PATCH = handle;
 export const DELETE = handle;
 export const dynamic = 'force-dynamic';
+// Chat (várias chamadas ao Gemini) e indexação de documentos precisam de mais que o padrão.
+export const maxDuration = 60;

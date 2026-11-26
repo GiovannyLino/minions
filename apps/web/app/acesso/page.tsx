@@ -2,29 +2,23 @@ import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { KeyRound } from 'lucide-react';
 import { Aurora, Orb } from '@/components/brand';
+import { clientIpFrom } from '@/lib/client-ip';
 import { DEMO_COOKIE, codeMatches, demoCode, demoToken, isDemoTokenValid, safeNext } from '@/lib/demo-gate';
+import { clearGateFailures, isGateBlocked, recordGateFailure } from '@/lib/gate-limiter';
 
 export const metadata = { title: 'Acesso' };
-
-// Limite simples de tentativas por IP (em memória do processo).
-const attempts = new Map<string, { count: number; until: number }>();
 
 async function enter(formData: FormData) {
   'use server';
   const next = safeNext(String(formData.get('next') ?? '/'));
-  const h = await headers();
-  const ip = (h.get('cf-connecting-ip') ?? h.get('x-forwarded-for')?.split(',')[0] ?? 'local').trim().slice(0, 64);
-  const now = Date.now();
-  const entry = attempts.get(ip);
-  if (entry && entry.until > now && entry.count >= 5) redirect(`/acesso?erro=bloqueado&next=${encodeURIComponent(next)}`);
+  const ip = clientIpFrom(await headers());
+  if (await isGateBlocked(ip)) redirect(`/acesso?erro=bloqueado&next=${encodeURIComponent(next)}`);
   const code = String(formData.get('code') ?? '').slice(0, 200);
   if (!codeMatches(code)) {
-    const fresh = !entry || entry.until < now;
-    attempts.set(ip, { count: fresh ? 1 : entry.count + 1, until: fresh ? now + 10 * 60_000 : entry.until });
-    if (attempts.size > 10_000) attempts.clear();
+    await recordGateFailure(ip);
     redirect(`/acesso?erro=1&next=${encodeURIComponent(next)}`);
   }
-  attempts.delete(ip);
+  clearGateFailures(ip);
   const secure = process.env.SESSION_COOKIE_SECURE === 'true' || process.env.NODE_ENV === 'production';
   (await cookies()).set(DEMO_COOKIE, demoToken(demoCode() ?? ''), { httpOnly: true, sameSite: 'lax', secure, path: '/', maxAge: 7 * 86400 });
   redirect(next);

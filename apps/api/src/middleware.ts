@@ -1,6 +1,6 @@
 import type { Context, MiddlewareHandler } from 'hono';
 import { getConnInfo } from '@hono/node-server/conninfo';
-import { AppError, RateLimitError, UnauthorizedError, verifyDevToken, type Minions, type Principal } from '@minions/core';
+import { AppError, RateLimitError, UnauthorizedError, verifyDevToken, type Minions, type Principal, type RateLimiter } from '@minions/core';
 
 export type AppEnv = { Variables: { principal: Principal; minions: Minions; requestId: string } };
 
@@ -38,10 +38,10 @@ export function authenticate(minions: Minions): MiddlewareHandler<AppEnv> {
 }
 
 /**
- * Rate limit por token bucket em memória. Em múltiplas instâncias, substituir por Redis
- * (Azure Cache for Redis) mantendo a mesma interface.
+ * Rate limit por token bucket em memória (uma instância). Com várias instâncias usa-se o
+ * DbRateLimiter do núcleo, com a mesma interface.
  */
-export class TokenBucketLimiter {
+export class TokenBucketLimiter implements RateLimiter {
   private readonly buckets = new Map<string, { tokens: number; at: number }>();
   constructor(
     private readonly perMinute: number,
@@ -65,9 +65,9 @@ export class TokenBucketLimiter {
   }
 }
 
-export function rateLimit(limiter: TokenBucketLimiter, keyOf: (c: Context<AppEnv>) => string): MiddlewareHandler<AppEnv> {
+export function rateLimit(limiter: RateLimiter, keyOf: (c: Context<AppEnv>) => string): MiddlewareHandler<AppEnv> {
   return async (c, next) => {
-    const result = limiter.take(keyOf(c));
+    const result = await limiter.take(keyOf(c));
     if (!result.ok) {
       c.header('Retry-After', String(result.retryAfter));
       throw new RateLimitError(result.retryAfter);

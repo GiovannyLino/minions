@@ -42,7 +42,7 @@ Cada usuário tem `clearance` (nível máximo) e `groups` (áreas/equipes). Cada
 | Ataques web comuns | Headers seguros (CSP, HSTS, X-Frame-Options), CORS restrito, cookie `httpOnly`+`SameSite=Lax`+`Secure` em prod, validação zod de entrada, limite de corpo, SQL parametrizado, rate limit por usuário | WAF (Front Door / Vercel Firewall) |
 | Força bruta / abuso | Rate limit (token bucket) por usuário e por IP no login de dev | Redis compartilhado em multi-instância |
 | Ciclos/custos de IA | Orçamento por requisição (chamadas de agente/LLM, profundidade, prazo) | Orçamento mensal por provedor |
-| Indexação em ambiente inadequado | `ALLOW_REAL_DATA=false` por padrão; banner "dados fictícios"; dev login bloqueado em `NODE_ENV=production` | Checklist de aprovação (§6) |
+| Indexação em ambiente inadequado | `ALLOW_REAL_DATA=false` por padrão; banner "dados fictícios"; dev login bloqueado em `NODE_ENV=production`, exceto na demonstração com `DEMO_ACCESS_CODE` (≥ 12 caracteres) e `ALLOW_REAL_DATA=false` | Checklist de aprovação (§6) |
 
 ## 4. LGPD
 
@@ -57,6 +57,7 @@ Cada usuário tem `clearance` (nível máximo) e `groups` (áreas/equipes). Cada
 - Anthropic (API comercial): por padrão mantém entradas/saídas por **30 dias**; ZDR (zero data retention) só mediante acordo, com exceções (Files API, cache de schema de saídas estruturadas por até 24 h, conteúdo sinalizado). Os modelos Fable/Mythos exigem retenção de 30 dias; **o padrão do Minions é `claude-opus-5-5`**, elegível a ZDR. Fontes: [API and data retention](https://platform.claude.com/docs/en/build-with-claude/api-and-data-retention), [ZDR FAQ](https://privacy.claude.com/en/articles/8956058-i-have-a-zero-data-retention-agreement-with-anthropic-what-products-does-it-apply-to).
 - Alternativa com contrato Microsoft: Claude via Microsoft Foundry (cobrança e termos Azure).
 - **Opção sem custo e sem terceiros:** `LLM_PROVIDER=ollama` — o modelo roda na infraestrutura da empresa e nenhum trecho sai da rede. É o modo recomendado para o protótipo.
+- **Google Gemini (plano gratuito)** — usado na demonstração em nuvem ([VERCEL.md](VERCEL.md)). No plano gratuito o Google pode usar o conteúdo enviado para melhorar os produtos dele; no plano pago, não. Por isso `ALLOW_REAL_DATA=true` com Gemini é recusado na inicialização sem `GEMINI_PAID_TIER=true`. A chave vai só no header `x-goog-api-key` (nunca na URL). Fonte: [Gemini API pricing](https://ai.google.dev/gemini-api/docs/pricing).
 - O Minions **não usa** Files API nem armazenamento de sessão no provedor; envia apenas os trechos já autorizados para o usuário.
 - Fallback de recusa (`fallbacks: "default"`) está habilitado por padrão; desligue com `AI_REFUSAL_FALLBACK=off` se o contrato exigir modelo único.
 

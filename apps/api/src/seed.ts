@@ -161,7 +161,8 @@ export async function seed(minions: Minions, opts: { log?: (msg: string) => void
 const isMain = process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
 if (isMain) {
   const env = loadEnv();
-  if (env.ALLOW_REAL_DATA || env.NODE_ENV === 'production') {
+  // Produção só aceita a carga fictícia na demonstração (DEMO_ACCESS_CODE e ALLOW_REAL_DATA=false, validados no env).
+  if (env.ALLOW_REAL_DATA || (env.NODE_ENV === 'production' && !env.DEMO_ACCESS_CODE)) {
     console.error('Seed bloqueado: este ambiente está marcado para dados reais/produção.');
     process.exit(1);
   }

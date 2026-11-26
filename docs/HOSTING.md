@@ -62,6 +62,6 @@ Trocar de provedor = trocar a implementação de `LlmProvider` (`packages/core/s
 | homologação | Fictícios ou amostra aprovada | Entra ID (tenant de teste) | Azure, assinatura separada |
 | produção | Reais, após checklist de [SECURITY.md](SECURITY.md) §6 | Entra ID | Azure + Vercel produção |
 
-**Fase de protótipo (custo zero):** o Minions é publicado a partir do PC do responsável via Cloudflare Tunnel (`npm run share`), com código de acesso obrigatório e apenas dados fictícios. A Vercel não comporta o sistema completo sem backend externo (não roda Ollama, banco local nem worker) e o plano Hobby é para uso não comercial; ela volta a fazer sentido na Opção C, com backend corporativo.
+**Fase de protótipo (custo zero):** desde 26/11/2026 o caminho recomendado é a **Vercel + Neon + Gemini** ([VERCEL.md](VERCEL.md)): a API roda embutida numa função do Next, banco e arquivos ficam no Neon (AWS São Paulo), a IA é o Gemini gratuito, e tudo fica atrás do código de acesso com dados fictícios. O túnel do PC (`npm run share`) continua disponível, mas tem link variável e depende do PC ligado. O plano Hobby da Vercel é para uso não comercial; para uso real volta a valer a Opção C, com backend corporativo.
 
-Nenhum deploy em nuvem foi feito. O procedimento está em [DEPLOY.md](DEPLOY.md).
+O procedimento corporativo está em [DEPLOY.md](DEPLOY.md).

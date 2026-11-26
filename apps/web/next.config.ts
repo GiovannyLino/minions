@@ -1,4 +1,8 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { NextConfig } from 'next';
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
 const isDev = process.env.NODE_ENV !== 'production';
 
@@ -20,7 +24,12 @@ const csp = [
 ].join('; ');
 
 const nextConfig: NextConfig = {
-  transpilePackages: ['@minions/core'],
+  transpilePackages: ['@minions/core', '@minions/api'],
+  // Monorepo: rastreia dependências a partir da raiz (a API embutida usa pacotes de packages/ e apps/api).
+  outputFileTracingRoot: root,
+  turbopack: { root },
+  // Pacotes com binários/wasm ou workers: carregados do node_modules em vez de empacotados.
+  serverExternalPackages: ['@electric-sql/pglite', '@electric-sql/pglite-pgvector', 'pg', 'pino', 'unpdf', 'mammoth', 'exceljs', 'jszip', 'papaparse'],
   poweredByHeader: false,
   reactStrictMode: true,
   async headers() {

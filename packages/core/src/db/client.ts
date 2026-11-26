@@ -1,7 +1,7 @@
 import { rmSync } from 'node:fs';
 import { mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { MIGRATIONS } from './migrations/index';
 
 /** Interface mínima de acesso a dados — implementada por node-postgres (produção) e PGlite (dev/testes). */
 export interface Queryable {
@@ -22,17 +22,21 @@ export interface DbOptions {
   databaseUrl?: string;
   /** Diretório de dados do PGlite; `memory://` para testes */
   dataDir?: string;
+  /** Tamanho máximo do pool do Postgres. */
+  poolMax?: number;
 }
 
 export async function createDb(opts: DbOptions): Promise<Db> {
-  if (opts.databaseUrl) return createPgDb(opts.databaseUrl);
+  if (opts.databaseUrl) return createPgDb(opts.databaseUrl, opts.poolMax);
   return createPgliteDb(opts.dataDir ?? 'memory://');
 }
 
-async function createPgDb(url: string): Promise<Db> {
+async function createPgDb(url: string, max = 10): Promise<Db> {
   const pg = await import('pg');
   const Pool = pg.default?.Pool ?? (pg as unknown as { Pool: typeof import('pg').Pool }).Pool;
-  const pool = new Pool({ connectionString: url, max: 10, idleTimeoutMillis: 30_000 });
+  const pool = new Pool({ connectionString: url, max, idleTimeoutMillis: 30_000, connectionTimeoutMillis: 15_000 });
+  // Conexões ociosas derrubadas pelo provedor (ex.: Neon ao hibernar) não podem derrubar o processo.
+  pool.on('error', () => undefined);
   const run = async <T>(client: { query: (s: string, p?: unknown[]) => Promise<{ rows: unknown[] }> }, sql: string, params?: unknown[]) =>
     (await client.query(sql, params)).rows as T[];
   return {
@@ -177,22 +181,35 @@ async function createPgliteDb(dataDir: string, log: (msg: string) => void = (m) 
   };
 }
 
-const MIGRATIONS_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), 'migrations');
+/** Chave arbitrária do advisory lock que serializa migrações entre instâncias (ex.: várias funções na Vercel). */
+const MIGRATION_LOCK = 72_620_251;
 
-/** Aplica migrações SQL em ordem, uma única vez cada. */
+/** Aplica migrações SQL em ordem, uma única vez cada — seguro com várias instâncias subindo ao mesmo tempo. */
 export async function migrate(db: Db, opts: { embeddingDim: number }): Promise<string[]> {
-  await db.query('create table if not exists schema_migrations (name text primary key, applied_at timestamptz not null default now())');
-  const applied = new Set((await db.query<{ name: string }>('select name from schema_migrations')).map((r) => r.name));
-  const files = (await readdir(MIGRATIONS_DIR)).filter((f) => f.endsWith('.sql')).sort();
+  const lock = async (tx: Queryable) => {
+    if (db.kind === 'pg') await tx.query('select pg_advisory_xact_lock($1)', [MIGRATION_LOCK]);
+  };
+  const pendingNames = async () => {
+    const exists = await db.one<{ ok: boolean }>(`select to_regclass('schema_migrations') is not null as ok`);
+    if (!exists?.ok) return MIGRATIONS.map((m) => m.name);
+    const applied = new Set((await db.query<{ name: string }>('select name from schema_migrations')).map((r) => r.name));
+    return MIGRATIONS.filter((m) => !applied.has(m.name)).map((m) => m.name);
+  };
+  // Caminho rápido (a cada partida a frio): nada pendente, nenhum lock.
   const newlyApplied: string[] = [];
-  for (const file of files) {
-    if (applied.has(file)) continue;
-    const sql = (await readFile(path.join(MIGRATIONS_DIR, file), 'utf8')).replaceAll('{{EMBEDDING_DIM}}', String(opts.embeddingDim));
-    await db.transaction(async (tx) => {
-      for (const statement of splitSql(sql)) await tx.query(statement);
-      await tx.query('insert into schema_migrations (name) values ($1)', [file]);
-    });
-    newlyApplied.push(file);
+  if ((await pendingNames()).length) {
+    for (const migration of MIGRATIONS) {
+      const sql = migration.sql.replaceAll('{{EMBEDDING_DIM}}', String(opts.embeddingDim));
+      await db.transaction(async (tx) => {
+        await lock(tx);
+        await tx.query('create table if not exists schema_migrations (name text primary key, applied_at timestamptz not null default now())');
+        const done = await tx.query('select 1 from schema_migrations where name = $1', [migration.name]);
+        if (done.length) return;
+        for (const statement of splitSql(sql)) await tx.query(statement);
+        await tx.query('insert into schema_migrations (name) values ($1)', [migration.name]);
+        newlyApplied.push(migration.name);
+      });
+    }
   }
   await assertEmbeddingDim(db, opts.embeddingDim);
   return newlyApplied;

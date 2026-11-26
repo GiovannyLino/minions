@@ -1,3 +1,6 @@
+/* eslint-disable */
+// Migração SQL embutida como texto: funciona igual no Node, nos testes e empacotada pela Vercel.
+export default /* sql */ `
 -- Minions — esquema inicial
 -- {{EMBEDDING_DIM}} é substituído pelo executor de migrações (EMBEDDING_DIM).
 
@@ -187,3 +190,4 @@ create table settings (
   updated_at timestamptz not null default now(),
   updated_by uuid references users(id) on delete set null
 );
+`;

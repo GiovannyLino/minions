@@ -1,3 +1,6 @@
+/* eslint-disable */
+// Migração SQL embutida como texto: funciona igual no Node, nos testes e empacotada pela Vercel.
+export default /* sql */ `
 -- Memória de respostas: reaproveita respostas já geradas para perguntas semelhantes,
 -- sem chamar o modelo de IA (funciona offline). Revalidada contra versões e permissões a cada uso.
 
@@ -16,3 +19,4 @@ create table answer_memory (
 );
 create index answer_memory_owner_idx on answer_memory (owner_id);
 create index answer_memory_embedding_idx on answer_memory using hnsw (question_embedding vector_cosine_ops);
+`;

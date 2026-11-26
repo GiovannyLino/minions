@@ -9,6 +9,7 @@
     "start": "next start -p 3000"
   },
   "dependencies": {
+    "@minions/api": "^0.1.0",
     "@minions/core": "^0.1.0",
     "clsx": "^2.1.1",
     "geist": "^1.9.2",

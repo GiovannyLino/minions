@@ -1,4 +1,5 @@
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import type { Queryable } from '../db/client';
 import path from 'node:path';
 
 /**
@@ -54,5 +55,38 @@ export class MemoryStorageProvider implements StorageProvider {
   }
   async delete(key: string) {
     this.files.delete(key);
+  }
+}
+
+/**
+ * Arquivos guardados no próprio Postgres (tabela file_blobs). Usado em hospedagem serverless,
+ * onde o disco é temporário: documentos ficam no banco (ex.: Neon em São Paulo), não na Vercel.
+ * Adequado ao protótipo (uploads de até 4 MB); em produção prefira um blob privado (Azure/S3).
+ */
+export class DbStorageProvider implements StorageProvider {
+  constructor(private readonly db: Queryable) {}
+
+  private check(key: string) {
+    if (!KEY_PATTERN.test(key) || key.includes('..')) throw new Error('Chave de armazenamento inválida');
+  }
+
+  async put(key: string, data: Buffer): Promise<void> {
+    this.check(key);
+    await this.db.query(
+      'insert into file_blobs (key, data, size) values ($1, $2, $3) on conflict (key) do update set data = excluded.data, size = excluded.size',
+      [key, data, data.length],
+    );
+  }
+
+  async get(key: string): Promise<Buffer> {
+    this.check(key);
+    const rows = await this.db.query<{ data: Uint8Array }>('select data from file_blobs where key = $1', [key]);
+    if (!rows[0]) throw new Error('Arquivo não encontrado');
+    return Buffer.from(rows[0].data);
+  }
+
+  async delete(key: string): Promise<void> {
+    this.check(key);
+    await this.db.query('delete from file_blobs where key = $1', [key]);
   }
 }

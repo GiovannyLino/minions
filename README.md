@@ -54,10 +54,11 @@ npm run ask -w @minions/api -- --as carla "Como preencher o RDO?"
 | `LLM_PROVIDER` | Custo | Comportamento |
 |---|---|---|
 | `none` (padrão) | Grátis | **Modo extrativo**: respostas compostas só de trechos literais dos documentos. Nenhum dado sai da máquina |
+| `gemini` | Grátis (plano gratuito do Google AI Studio) | Google Gemini redige a resposta com saída estruturada e citações validadas. No plano gratuito o Google pode usar o conteúdo — **só dados fictícios** (o sistema recusa `ALLOW_REAL_DATA=true` sem `GEMINI_PAID_TIER=true`) |
 | `ollama` | Grátis (roda no seu computador/servidor) | Modelo local via [Ollama](https://ollama.com) redige a resposta com saída estruturada e citações validadas. Documentos não saem da máquina |
 | `anthropic` | Pago por uso | Claude (`claude-opus-5-5`). Use só com orçamento aprovado |
 
-Embeddings: `hash` (grátis, lexical, só dev) · `ollama` (grátis, semântico) · `voyage` / `openai` (pagos).
+Embeddings: `hash` (grátis, lexical, só dev) · `gemini` (grátis, semântico, `EMBEDDING_DIM=768`) · `ollama` (grátis, semântico) · `voyage` / `openai` (pagos).
 
 ### Funcionamento offline e custo zero
 
@@ -83,7 +84,11 @@ ollama pull bge-m3
 
 No `.env`: `LLM_PROVIDER=ollama`, e para busca semântica `EMBEDDING_PROVIDER=ollama`, `EMBEDDING_MODEL=bge-m3`, `EMBEDDING_DIM=1024`. Trocar os embeddings exige recriar o índice (`npm run seed -w @minions/api -- --force`). Se o Ollama estiver desligado, o Minions responde no modo extrativo automaticamente.
 
-## Compartilhar com outras pessoas (grátis)
+## Publicar na nuvem com link fixo (grátis) — recomendado
+
+**Vercel + Neon (Postgres em São Paulo) + Gemini**: link fixo, não depende do seu PC ligado, mesmas camadas de segurança (código de acesso, ACL, auditoria, rate limit). Passo a passo em **[docs/VERCEL.md](docs/VERCEL.md)** (~10 min).
+
+## Compartilhar a partir do seu PC (grátis)
 
 O Minions roda no seu computador (IA na sua GPU, documentos locais) e é publicado por um **Cloudflare Tunnel** — link HTTPS público, sem conta e sem custo. Só o site é exposto; API, Ollama e banco continuam acessíveis apenas na sua máquina.
 
@@ -142,7 +147,8 @@ docs/         Arquitetura, segurança, hospedagem, agentes, deploy, Teams
 |---|---|
 | `npm run dev` | API (:4000) + web (:3000) |
 | `npm run seed` / `npm run seed -w @minions/api -- --force` | Carrega dados fictícios / recria a base local (pare o `npm run dev` antes) |
-| `npm test` | 57 testes (unidade, integração, isolamento, ingestão, agentes, OIDC, Ollama, memória) |
+| `npm test` | 68 testes (unidade, integração, isolamento, ingestão, agentes, OIDC, Ollama, Gemini, nuvem, memória) |
+| `npm run seed:cloud -w @minions/api` | Carrega os dados fictícios no banco da nuvem (lê `.env.cloud`) |
 | `npm run dev:sso` | API + web em modo OIDC com IdP de desenvolvimento |
 | `npm run share` | Publica o Minions do seu PC com link público + código de acesso |
 | `npm run typecheck` | Checagem de tipos de todos os pacotes |
@@ -155,5 +161,6 @@ docs/         Arquitetura, segurança, hospedagem, agentes, deploy, Teams
 - [Agentes e colaboração](docs/AGENTS.md)
 - [Segurança e LGPD](docs/SECURITY.md)
 - [Avaliação de hospedagem (Vercel × Azure × híbrida)](docs/HOSTING.md)
-- [Publicação](docs/DEPLOY.md)
+- [Nuvem grátis: Vercel + Neon + Gemini](docs/VERCEL.md)
+- [Publicação corporativa](docs/DEPLOY.md)
 - [Microsoft Teams](docs/TEAMS.md)

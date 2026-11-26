@@ -1,10 +1,10 @@
 import 'server-only';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { callApi } from './api-transport';
 
 export const SESSION_COOKIE = 'minions_session';
 export const THEME_COOKIE = 'minions_theme';
-export const API_URL = process.env.API_URL ?? 'http://127.0.0.1:4000';
 
 export async function getSessionToken(): Promise<string | null> {
   return (await cookies()).get(SESSION_COOKIE)?.value ?? null;
@@ -23,7 +23,7 @@ export class ApiServerError extends Error {
 export async function apiServer<T>(path: string, init: RequestInit = {}): Promise<T> {
   const token = await getSessionToken();
   if (!token) redirect('/login');
-  const res = await fetch(`${API_URL}${path}`, {
+  const res = await callApi(path, {
     ...init,
     cache: 'no-store',
     redirect: 'error',
@@ -40,7 +40,9 @@ export async function apiServer<T>(path: string, init: RequestInit = {}): Promis
 }
 
 export async function apiPublic<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, { ...init, cache: 'no-store', redirect: 'error' });
+  const res = await callApi(path, { ...init, cache: 'no-store', redirect: 'error' }).catch(() => {
+    throw new ApiServerError(503, 'O serviço do Minions está indisponível no momento. Tente novamente em instantes.');
+  });
   if (!res.ok) {
     const body = (await res.json().catch(() => null)) as { error?: { message?: string } } | null;
     throw new ApiServerError(res.status, body?.error?.message ?? `Erro ${res.status}`);

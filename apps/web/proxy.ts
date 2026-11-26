@@ -22,5 +22,7 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!acesso|_next/static|_next/image|favicon.ico).*)'],
+  // /api/cron fica fora do portão: é chamado pela Vercel e exige CRON_SECRET (ver a rota).
+  // Qualquer outro caminho que comece assim cai na rota catch-all, que só aceita /api/v1/* (404).
+  matcher: ['/((?!acesso|api/cron|_next/static|_next/image|favicon.ico).*)'],
 };

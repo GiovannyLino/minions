@@ -14,13 +14,16 @@ import {
   NotFoundError,
   UserUpdateSchema,
   ValidationError,
+  DbRateLimiter,
   assertCan,
   can,
+  devLoginAllowed,
   preview,
   signDevToken,
   type ChatAnswer,
   type Minions,
   type Principal,
+  type RateLimiter,
 } from '@minions/core';
 import { TokenBucketLimiter, authenticate, clientIp, errorBody, rateLimit, type AppEnv } from './middleware';
 
@@ -32,9 +35,11 @@ export function createApp(minions: Minions, opts: { trustProxy?: boolean } = {})
   const app = new Hono<AppEnv>();
   const ipOf = (c: Parameters<typeof clientIp>[0]) => clientIp(c, trustProxy);
 
-  const generalLimiter = new TokenBucketLimiter(env.RATE_LIMIT_PER_MINUTE * 4);
-  const chatLimiter = new TokenBucketLimiter(Math.max(5, Math.floor(env.RATE_LIMIT_PER_MINUTE / 3)));
-  const loginLimiter = new TokenBucketLimiter(10);
+  // Com Postgres (várias instâncias, ex.: Vercel) o limite fica no banco e vale para todas; com PGlite, em memória.
+  const limiter = (perMinute: number): RateLimiter => (minions.db.kind === 'pg' ? new DbRateLimiter(minions.db, perMinute) : new TokenBucketLimiter(perMinute));
+  const generalLimiter = limiter(env.RATE_LIMIT_PER_MINUTE * 4);
+  const chatLimiter = limiter(Math.max(5, Math.floor(env.RATE_LIMIT_PER_MINUTE / 3)));
+  const loginLimiter = limiter(10);
 
   app.use('*', async (c, next) => {
     const requestId = c.req.header('x-request-id')?.slice(0, 64) ?? randomUUID();
@@ -60,7 +65,8 @@ export function createApp(minions: Minions, opts: { trustProxy?: boolean } = {})
   });
 
   // ───────────────────────── Autenticação de desenvolvimento ─────────────────────────
-  const devAuthEnabled = env.AUTH_MODE === 'dev' && env.NODE_ENV !== 'production';
+  // Em produção, só na demonstração com DEMO_ACCESS_CODE (o portão do web bloqueia tudo antes do código).
+  const devAuthEnabled = devLoginAllowed(env);
   app.get('/v1/auth/config', (c) => c.json({ mode: env.AUTH_MODE, devLogin: devAuthEnabled, realDataAllowed: env.ALLOW_REAL_DATA }));
   app.get('/v1/auth/dev-users', async (c) => {
     if (!devAuthEnabled) throw new NotFoundError();
