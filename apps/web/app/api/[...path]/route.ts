@@ -22,7 +22,7 @@ async function handle(request: NextRequest, ctx: { params: Promise<{ path: strin
     return Response.json({ error: { code: 'not_found', message: 'Rota não encontrada' } }, { status: 404 });
   }
   if (request.method !== 'GET' && request.method !== 'HEAD') {
-    // Compara só o host: atrás de um túnel/proxy HTTPS o esquema interno é http.
+    // Compara só o host: atrás de um proxy HTTPS o esquema interno pode ser http.
     const origin = request.headers.get('origin');
     let originHost: string | null = null;
     try {

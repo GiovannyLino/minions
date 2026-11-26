@@ -8,7 +8,7 @@
 |---|---|---|
 | Repositório | `D:\Minions` vazio, sem git | Monorepo novo com npm workspaces |
 | Runtime | Node 24, npm 11 | TypeScript ESM em todo o código |
-| Docker | Instalado, daemon parado | Dev/testes usam **PGlite** (Postgres WASM com pgvector); `docker-compose.yml` para Postgres real |
+| Banco | — | Dev/testes usam **PGlite** (Postgres WASM com pgvector); nuvem usa **Neon** (Postgres gerenciado com pgvector) |
 | Higgsfield MCP | Conectado, plano gratuito (10 créditos). `generate_image` retornou *"Requires basic plan or higher"* | Não utilizado. Identidade visual feita localmente (SVG + tokens CSS). Ver §7 |
 | Integrações disponíveis | Vercel, Supabase, Render, Netlify, Google Drive (MCPs) | Nenhuma usada para dados; Vercel MCP só para consulta de docs. Integração com SharePoint/Drive fica atrás da interface `SourceConnector` (futuro) |
 
@@ -36,7 +36,7 @@
 │  knowledge/ ingestão → validação → scan → extração →     │
 │            chunking → embeddings → índice híbrido          │
 │  auth/     política RBAC + ACL por documento (SQL)        │
-│  ai/       LlmProvider (Claude) · EmbeddingProvider       │
+│  ai/       LlmProvider (Gemini/Ollama) · Embeddings       │
 │  storage/  StorageProvider (local | blob privado)         │
 └─────────┬─────────────────────────────┬──────────────────┘
           ▼                             ▼
@@ -92,11 +92,11 @@ Detalhes em [AGENTS.md](AGENTS.md). Resumo:
 | 2 | API separada (Hono) + Next como BFF | Tudo em route handlers do Next | Permite hospedar o backend fora da Vercel (opção híbrida) e reutilizar no Teams |
 | 3 | SQL explícito + migrações `.sql` | Prisma/Drizzle | Controle total de filtros de ACL, busca híbrida e RLS futura |
 | 4 | PGlite em dev/teste, Postgres em homolog/prod | SQLite | Mesmo dialeto, pgvector e FTS em português; testes de isolamento rodam em CI sem Docker |
-| 5 | Claude via Messages API, orquestração em código | Managed Agents; frameworks de agentes | Fluxo controlado por código, dados ficam na infraestrutura própria, auditoria e limites determinísticos. Managed Agents hospedaria sessões na Anthropic — inadequado para documentos internos sem aprovação |
+| 5 | LLM via API (Gemini/Ollama), orquestração em código | Managed Agents; frameworks de agentes | Fluxo controlado por código, dados ficam na infraestrutura própria, auditoria e limites determinísticos. Managed Agents hospedaria sessões na Anthropic — inadequado para documentos internos sem aprovação |
 | 6 | Saída estruturada (JSON schema) + validação zod | Texto livre | Respostas com fontes verificáveis, sem parsing frágil |
 | 7 | Modo **extrativo** sem LLM | Exigir chave de API | Dev/testes sem custo e sem enviar dados a terceiros; respostas compostas apenas de trechos recuperados, claramente rotuladas |
-| 8 | Embeddings plugáveis (`hash` dev, Voyage, OpenAI/Azure OpenAI) | Um provedor fixo | Anthropic não oferece embeddings; escolha depende do contrato corporativo |
-| 10 | IA local via Ollama (`qwen2.5:7b` + `bge-m3`) como padrão do protótipo | Claude, OpenAI | Custo zero, funciona offline, documentos não saem da máquina. Claude fica como opção futura |
+| 8 | Embeddings plugáveis (`hash` dev, Ollama, Gemini) | Um provedor fixo | Escolha depende do custo e do contrato; trocar de provedor exige reindexar |
+| 10 | IA gratuita: Ollama local (`qwen2.5:7b` + `bge-m3`) e Gemini na nuvem | Provedores pagos | Custo zero. Provedores pagos (Claude, OpenAI) podem ser adicionados implementando `LlmProvider` quando houver orçamento |
 | 11 | Memória de respostas com revalidação de ACL/versão | Cache por texto exato | Responde repetições sem IA e offline sem relaxar permissões |
 | 9 | Links de download assinados (HMAC, 5 min) e revalidação de ACL no download | URLs públicas de blob | Evita URLs de armazenamento expostas |
 

@@ -10,7 +10,7 @@ export { AuditService, type AuditEvent } from './audit/audit';
 export { DbStorageProvider, LocalStorageProvider, MemoryStorageProvider, type StorageProvider } from './storage/storage';
 export { DbRateLimiter, type RateLimiter, type RateLimitResult } from './security/rateLimit';
 export { HashingEmbeddingProvider, type EmbeddingProvider } from './ai/embeddings';
-export { AnthropicLlmProvider, LlmError, type LlmProvider, type StructuredRequest } from './ai/llm';
+export { LlmError, type LlmProvider, type StructuredRequest } from './ai/llm';
 export { OllamaEmbeddingProvider, OllamaLlmProvider } from './ai/ollama';
 export { GeminiEmbeddingProvider, GeminiLlmProvider } from './ai/gemini';
 export { DocumentService, DocumentListFilterSchema } from './knowledge/documents';

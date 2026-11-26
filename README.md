@@ -56,9 +56,8 @@ npm run ask -w @minions/api -- --as carla "Como preencher o RDO?"
 | `none` (padrão) | Grátis | **Modo extrativo**: respostas compostas só de trechos literais dos documentos. Nenhum dado sai da máquina |
 | `gemini` | Grátis (plano gratuito do Google AI Studio) | Google Gemini redige a resposta com saída estruturada e citações validadas. No plano gratuito o Google pode usar o conteúdo — **só dados fictícios** (o sistema recusa `ALLOW_REAL_DATA=true` sem `GEMINI_PAID_TIER=true`) |
 | `ollama` | Grátis (roda no seu computador/servidor) | Modelo local via [Ollama](https://ollama.com) redige a resposta com saída estruturada e citações validadas. Documentos não saem da máquina |
-| `anthropic` | Pago por uso | Claude (`claude-opus-5-5`). Use só com orçamento aprovado |
 
-Embeddings: `hash` (grátis, lexical, só dev) · `gemini` (grátis, semântico, `EMBEDDING_DIM=768`) · `ollama` (grátis, semântico) · `voyage` / `openai` (pagos).
+Embeddings: `hash` (grátis, lexical, só dev) · `gemini` (grátis, semântico, `EMBEDDING_DIM=768`) · `ollama` (grátis, semântico).
 
 ### Funcionamento offline e custo zero
 
@@ -84,37 +83,15 @@ ollama pull bge-m3
 
 No `.env`: `LLM_PROVIDER=ollama`, e para busca semântica `EMBEDDING_PROVIDER=ollama`, `EMBEDDING_MODEL=bge-m3`, `EMBEDDING_DIM=1024`. Trocar os embeddings exige recriar o índice (`npm run seed -w @minions/api -- --force`). Se o Ollama estiver desligado, o Minions responde no modo extrativo automaticamente.
 
-## Publicar na nuvem com link fixo (grátis) — recomendado
+## Publicar na nuvem (grátis)
 
 **Vercel + Neon (Postgres em São Paulo) + Gemini**: link fixo, não depende do seu PC ligado, mesmas camadas de segurança (código de acesso, ACL, auditoria, rate limit). Passo a passo em **[docs/VERCEL.md](docs/VERCEL.md)** (~10 min).
 
-## Compartilhar a partir do seu PC (grátis)
-
-O Minions roda no seu computador (IA na sua GPU, documentos locais) e é publicado por um **Cloudflare Tunnel** — link HTTPS público, sem conta e sem custo. Só o site é exposto; API, Ollama e banco continuam acessíveis apenas na sua máquina.
-
-Pré-requisito (uma vez):
-
-```powershell
-winget install Cloudflare.cloudflared
-```
-
-Feche qualquer `npm run dev` aberto e rode:
-
-```powershell
-npm run share
-```
-
-O terminal mostra o **link** (`https://….trycloudflare.com`) e um **código de acesso**. Envie os dois só para quem deve testar: ninguém vê nenhuma página sem o código (5 tentativas erradas bloqueiam por 10 min). Para encerrar, `Ctrl+C` — o link deixa de funcionar e a API salva o banco antes de sair.
-
-- O link muda a cada execução e só funciona com o PC ligado. Para um endereço fixo e login por e-mail, use um *named tunnel* com Cloudflare Access (gratuito até 50 usuários, exige um domínio na Cloudflare).
-- Use `DEMO_ACCESS_CODE=...` para fixar o código; `npm run share -- --skip-build` reaproveita o build anterior.
-- Os usuários fictícios (inclusive o administrador) ficam disponíveis para quem tem o código. **Não carregue dados reais** nesse modo.
-
-### Se algo não iniciar
+## Se algo não iniciar localmente
 
 | Mensagem | Causa e solução |
 |---|---|
-| "A porta 3000/4000 já está em uso" | Outra instância (`npm run dev`/`share`) está aberta. Feche-a com `Ctrl+C` |
+| "A porta 3000/4000 já está em uso" | Outra instância (`npm run dev`) está aberta. Feche-a com `Ctrl+C` |
 | "O banco local já está em uso por outra instância" | Idem. Dois processos no mesmo banco o corrompem, por isso o Minions recusa |
 | "Banco local danificado… restaurando" | Encerramento abrupto. O Minions restaura sozinho o último backup (feito a cada 10 min e ao encerrar) e guarda a pasta danificada |
 | "danificado e não há backup" | Recrie a base de demonstração: `npm run seed -w @minions/api -- --force` |
@@ -150,7 +127,6 @@ docs/         Arquitetura, segurança, hospedagem, agentes, deploy, Teams
 | `npm test` | 68 testes (unidade, integração, isolamento, ingestão, agentes, OIDC, Ollama, Gemini, nuvem, memória) |
 | `npm run seed:cloud -w @minions/api` | Carrega os dados fictícios no banco da nuvem (lê `.env.cloud`) |
 | `npm run dev:sso` | API + web em modo OIDC com IdP de desenvolvimento |
-| `npm run share` | Publica o Minions do seu PC com link público + código de acesso |
 | `npm run typecheck` | Checagem de tipos de todos os pacotes |
 | `npm run build` | Build de produção do web |
 | `npm run worker -w @minions/api` | Worker de ingestão separado (requer `DATABASE_URL`) |

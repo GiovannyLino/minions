@@ -9,7 +9,7 @@
 | Assinatura Azure (homologação e produção separadas) em Brazil South | TI / Cloud | pendente |
 | App registration no Entra ID (API + web), app roles `Minions.Admin` e `Minions.Manager`, claim de grupos | TI / Identidade | pendente |
 | Contrato do provedor de IA revisado (retenção, ZDR, região) | Jurídico / DPO | pendente |
-| Provedor de embeddings (Voyage ou Azure OpenAI) | TI | pendente |
+| Provedor de embeddings (Gemini pago ou Ollama na rede interna) | TI | pendente |
 | RIPD / LGPD | DPO | pendente |
 | Time da Vercel (Pro/Enterprise) e domínio | TI | pendente |
 
@@ -37,7 +37,7 @@ AUTH_SECRET=<Key Vault>         # links assinados
 DATABASE_URL=<Key Vault>
 LLM_PROVIDER=ollama            # none (grátis) | ollama (grátis, modelo local) | anthropic (pago)
 OLLAMA_URL=http://<vm-ollama>:11434   # rede privada; nunca exposto à internet
-EMBEDDING_PROVIDER=ollama      # ollama (grátis) | voyage | openai (pagos, exigem EMBEDDING_API_KEY)
+EMBEDDING_PROVIDER=ollama      # ollama (grátis, rede interna) | gemini (exige GEMINI_PAID_TIER=true com dados reais)
 EMBEDDING_MODEL=bge-m3
 EMBEDDING_DIM=1024              # deve casar com o modelo de embeddings
 MALWARE_SCANNER=clamav

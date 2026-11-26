@@ -11,7 +11,7 @@ export function proxy(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith('/api/')) {
     return Response.json({ error: { code: 'demo_locked', message: 'Código de acesso necessário' } }, { status: 401 });
   }
-  // Atrás do túnel HTTPS o servidor recebe http; usa o esquema/host públicos informados pelo proxy.
+  // Atrás de um proxy HTTPS o servidor pode receber http; usa o esquema/host públicos informados pelo proxy.
   const proto = request.headers.get('x-forwarded-proto')?.split(',')[0]?.trim() || request.nextUrl.protocol.replace(':', '');
   const host = request.headers.get('x-forwarded-host') ?? request.headers.get('host') ?? request.nextUrl.host;
   const target = new URL('/acesso', `${proto === 'https' ? 'https' : 'http'}://${host}`);

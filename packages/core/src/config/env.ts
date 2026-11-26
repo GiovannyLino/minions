@@ -63,21 +63,17 @@ export const EnvSchema = z
         }
       }),
 
-    /** none = extrativo (grátis) · gemini = Google Gemini (plano gratuito) · ollama = modelo local (grátis) · anthropic = Claude (pago por uso) */
-    LLM_PROVIDER: z.enum(['none', 'gemini', 'ollama', 'anthropic']).default('none'),
+    /** none = extrativo (grátis) · gemini = Google Gemini (plano gratuito) · ollama = modelo local (grátis) */
+    LLM_PROVIDER: z.enum(['none', 'gemini', 'ollama']).default('none'),
     GEMINI_API_KEY: optionalString,
     GEMINI_MODEL: z.string().default('gemini-3.5-flash-lite'),
     /** true somente se o projeto do Google tiver faturamento ativo (o conteúdo deixa de ser usado pelo Google). */
     GEMINI_PAID_TIER: bool,
     OLLAMA_URL: z.string().default('http://127.0.0.1:11434'),
     OLLAMA_MODEL: z.string().default('qwen2.5:7b'),
-    ANTHROPIC_API_KEY: optionalString,
-    LLM_MODEL: z.string().default('claude-opus-5-5'),
-    AI_REFUSAL_FALLBACK: z.enum(['default', 'off']).default('default'),
-    EMBEDDING_PROVIDER: z.enum(['hash', 'gemini', 'ollama', 'voyage', 'openai']).default('hash'),
+    EMBEDDING_PROVIDER: z.enum(['hash', 'gemini', 'ollama']).default('hash'),
     EMBEDDING_DIM: intDefault(384),
     EMBEDDING_MODEL: optionalString,
-    EMBEDDING_API_KEY: optionalString,
     EMBEDDING_BASE_URL: optionalString,
 
     MAX_UPLOAD_MB: intDefault(25),
@@ -106,7 +102,7 @@ export const EnvSchema = z
     if (env.LLM_PROVIDER === 'gemini' && !env.GEMINI_API_KEY) {
       ctx.addIssue({ code: 'custom', path: ['GEMINI_API_KEY'], message: 'GEMINI_API_KEY é obrigatório com LLM_PROVIDER=gemini (crie grátis em https://aistudio.google.com/apikey)' });
     }
-    if (env.EMBEDDING_PROVIDER === 'gemini' && !env.GEMINI_API_KEY && !env.EMBEDDING_API_KEY) {
+    if (env.EMBEDDING_PROVIDER === 'gemini' && !env.GEMINI_API_KEY) {
       ctx.addIssue({ code: 'custom', path: ['GEMINI_API_KEY'], message: 'GEMINI_API_KEY é obrigatório com EMBEDDING_PROVIDER=gemini' });
     }
     if (usesGemini && env.ALLOW_REAL_DATA && !env.GEMINI_PAID_TIER) {
@@ -125,12 +121,6 @@ export const EnvSchema = z
     }
     if (env.AUTH_MODE === 'oidc' && (!env.OIDC_ISSUER || !env.OIDC_AUDIENCE || !env.OIDC_JWKS_URI)) {
       ctx.addIssue({ code: 'custom', path: ['OIDC_ISSUER'], message: 'OIDC_ISSUER, OIDC_AUDIENCE e OIDC_JWKS_URI são obrigatórios em AUTH_MODE=oidc' });
-    }
-    if (env.LLM_PROVIDER === 'anthropic' && !env.ANTHROPIC_API_KEY) {
-      // O SDK também resolve credenciais por perfil (`ant auth login`); apenas avisamos.
-    }
-    if ((env.EMBEDDING_PROVIDER === 'voyage' || env.EMBEDDING_PROVIDER === 'openai') && !env.EMBEDDING_API_KEY) {
-      ctx.addIssue({ code: 'custom', path: ['EMBEDDING_API_KEY'], message: 'EMBEDDING_API_KEY é obrigatório para provedores externos' });
     }
     if (env.NODE_ENV === 'production' && env.EMBEDDING_PROVIDER === 'hash') {
       ctx.addIssue({ code: 'custom', path: ['EMBEDDING_PROVIDER'], message: 'Embeddings "hash" são apenas para desenvolvimento' });

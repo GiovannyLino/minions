@@ -4,7 +4,7 @@ import { getEmbedded, isEmbedded } from './embedded';
 /**
  * Limite de tentativas erradas do código de acesso: 5 por IP a cada 10 minutos.
  * Na Vercel (API embutida + Postgres) o contador fica no banco — vale para todas as instâncias.
- * Com a API separada (npm run share), fica na memória do processo web.
+ * Com a API separada (desenvolvimento local), fica na memória do processo web.
  */
 const MAX_FAILURES = 5;
 const WINDOW_MS = 10 * 60_000;

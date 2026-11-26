@@ -80,7 +80,7 @@ node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
 
 ## Desenvolvimento local continua igual
 
-`npm run dev` (API separada + Ollama/PGlite) e `npm run share` seguem funcionando. Para usar o Gemini localmente, basta `LLM_PROVIDER=gemini` e `GEMINI_API_KEY` no `.env` (trocar os embeddings para Gemini exige `EMBEDDING_DIM=768` e recriar a base com `npm run seed -w @minions/api -- --force`).
+`npm run dev` (API separada + Ollama/PGlite) segue funcionando. Para usar o Gemini localmente, basta `LLM_PROVIDER=gemini` e `GEMINI_API_KEY` no `.env` (trocar os embeddings para Gemini exige `EMBEDDING_DIM=768` e recriar a base com `npm run seed -w @minions/api -- --force`).
 
 ## Limitações honestas
 

@@ -31,7 +31,7 @@ pergunta ─▶ Orchestrator.plan (regras | LLM)            trace: plan
              + complemento: People se houver conteúdo
           ─▶ seleção de evidências (relevância ≥ limiar, ACL já aplicada)
           ─▶ detecção de conflitos (mesma subject_key, valores divergentes)
-          ─▶ síntese (Claude com saída estruturada | extrativa)   trace: synthesis
+          ─▶ síntese (Gemini/Ollama com saída estruturada | extrativa)   trace: synthesis
           ─▶ validação de citações; sem fundamento ⇒ "Não encontrei…"   trace: done
 ```
 
@@ -76,9 +76,8 @@ Contatos são recarregados do diretório no momento do uso. Respostas "insuficie
 ## Uso do modelo de IA
 
 - O Minions concentra as chamadas no Orchestrator (planejamento quando ambíguo + síntese). Os agentes especialistas usam ferramentas determinísticas — mais barato, rápido e auditável.
-- Provedores: `none` (extrativo), `ollama` (local e gratuito — padrão deste ambiente, `qwen2.5:7b`) ou `anthropic` (pago). O validador aceita variações de citação de modelos menores (`"[S2]"` → `S2`), exige documentos distintos para apontar divergência e, se o modelo desistir com material suficiente, usa a resposta extrativa.
-- Com Claude: modelo `claude-opus-5-5`, pensamento adaptativo, `effort` `low` no plano e `medium` na síntese, saída estruturada (JSON Schema) validada com zod.
-- **Fallback de recusa do lado do servidor habilitado** (`fallbacks: "default"`, beta `server-side-fallback-2026-07-01`). Desligue com `AI_REFUSAL_FALLBACK=off`.
+- Provedores: `none` (extrativo), `ollama` (local e gratuito — padrão deste ambiente, `qwen2.5:7b`) ou `gemini` (plano gratuito — padrão da nuvem, `gemini-3.5-flash-lite`). O validador aceita variações de citação de modelos menores (`"[S2]"` → `S2`), exige documentos distintos para apontar divergência e, se o modelo desistir com material suficiente, usa a resposta extrativa.
+- Com Gemini: saída estruturada (`responseJsonSchema`) validada com zod, `thinkingLevel` baixo para respostas rápidas, nova tentativa respeitando o atraso pedido pelo Google no limite gratuito (429).
 - Prompt: documentos em `<document ref=… suspicious=…>` com conteúdo escapado; o system prompt declara documentos como dados não confiáveis.
 - Se o modelo falhar, a resposta cai para o modo extrativo (testado).
 

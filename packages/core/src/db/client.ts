@@ -66,7 +66,7 @@ export class DatabaseInUseError extends Error {
   constructor(public readonly pid: number) {
     super(
       `O banco local já está em uso por outra instância do Minions (processo ${pid}). ` +
-        'Feche-a antes (Ctrl+C no terminal onde rodou "npm run dev" ou "npm run share") — dois processos no mesmo banco o corrompem.',
+        'Feche-a antes (Ctrl+C no terminal onde rodou "npm run dev") — dois processos no mesmo banco o corrompem.',
     );
     this.name = 'DatabaseInUseError';
   }

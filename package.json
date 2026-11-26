@@ -21,7 +21,6 @@
     "typecheck": "tsc -p packages/core && tsc -p apps/api && tsc -p apps/web --noEmit",
     "build": "npm run build -w @minions/web",
     "dev:sso": "tsx apps/api/src/dev/dev-sso.ts",
-    "share": "tsx apps/api/src/dev/share.ts",
     "predev": "tsx apps/api/src/dev/preflight.ts"
   },
   "devDependencies": {

@@ -54,12 +54,11 @@ Cada usuário tem `clearance` (nível máximo) e `groups` (áreas/equipes). Cada
 
 ## 5. Provedores de IA
 
-- Anthropic (API comercial): por padrão mantém entradas/saídas por **30 dias**; ZDR (zero data retention) só mediante acordo, com exceções (Files API, cache de schema de saídas estruturadas por até 24 h, conteúdo sinalizado). Os modelos Fable/Mythos exigem retenção de 30 dias; **o padrão do Minions é `claude-opus-5-5`**, elegível a ZDR. Fontes: [API and data retention](https://platform.claude.com/docs/en/build-with-claude/api-and-data-retention), [ZDR FAQ](https://privacy.claude.com/en/articles/8956058-i-have-a-zero-data-retention-agreement-with-anthropic-what-products-does-it-apply-to).
+- *Alternativas futuras (não implementadas; exigem orçamento):* Anthropic (API comercial): por padrão mantém entradas/saídas por **30 dias**; ZDR (zero data retention) só mediante acordo, com exceções (Files API, cache de schema de saídas estruturadas por até 24 h, conteúdo sinalizado). Os modelos Fable/Mythos exigem retenção de 30 dias; **o padrão do Minions é `claude-opus-5-5`**, elegível a ZDR. Fontes: [API and data retention](https://platform.claude.com/docs/en/build-with-claude/api-and-data-retention), [ZDR FAQ](https://privacy.claude.com/en/articles/8956058-i-have-a-zero-data-retention-agreement-with-anthropic-what-products-does-it-apply-to).
 - Alternativa com contrato Microsoft: Claude via Microsoft Foundry (cobrança e termos Azure).
 - **Opção sem custo e sem terceiros:** `LLM_PROVIDER=ollama` — o modelo roda na infraestrutura da empresa e nenhum trecho sai da rede. É o modo recomendado para o protótipo.
 - **Google Gemini (plano gratuito)** — usado na demonstração em nuvem ([VERCEL.md](VERCEL.md)). No plano gratuito o Google pode usar o conteúdo enviado para melhorar os produtos dele; no plano pago, não. Por isso `ALLOW_REAL_DATA=true` com Gemini é recusado na inicialização sem `GEMINI_PAID_TIER=true`. A chave vai só no header `x-goog-api-key` (nunca na URL). Fonte: [Gemini API pricing](https://ai.google.dev/gemini-api/docs/pricing).
 - O Minions **não usa** Files API nem armazenamento de sessão no provedor; envia apenas os trechos já autorizados para o usuário.
-- Fallback de recusa (`fallbacks: "default"`) está habilitado por padrão; desligue com `AI_REFUSAL_FALLBACK=off` se o contrato exigir modelo único.
 
 ## 6. Checklist antes de dados reais
 

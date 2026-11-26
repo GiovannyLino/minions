@@ -51,7 +51,7 @@ Se a política corporativa proibir qualquer tráfego de conteúdo por terceiros,
 | Claude via Microsoft Foundry | Contrato e cobrança Azure, Entra ID | Verificar região de processamento e paridade de recursos |
 | Claude via Amazon Bedrock | Contrato AWS | Infra diferente do restante |
 
-Trocar de provedor = trocar a implementação de `LlmProvider` (`packages/core/src/ai`). Embeddings: Voyage AI ou Azure OpenAI (implementação OpenAI-compatível incluída).
+Implementados hoje: Gemini e Ollama (gratuitos). Os demais são alternativas futuras — trocar de provedor = implementar `LlmProvider` / `EmbeddingProvider` em `packages/core/src/ai`.
 
 ## 5. Ambientes
 
@@ -62,6 +62,6 @@ Trocar de provedor = trocar a implementação de `LlmProvider` (`packages/core/s
 | homologação | Fictícios ou amostra aprovada | Entra ID (tenant de teste) | Azure, assinatura separada |
 | produção | Reais, após checklist de [SECURITY.md](SECURITY.md) §6 | Entra ID | Azure + Vercel produção |
 
-**Fase de protótipo (custo zero):** desde 26/11/2026 o caminho recomendado é a **Vercel + Neon + Gemini** ([VERCEL.md](VERCEL.md)): a API roda embutida numa função do Next, banco e arquivos ficam no Neon (AWS São Paulo), a IA é o Gemini gratuito, e tudo fica atrás do código de acesso com dados fictícios. O túnel do PC (`npm run share`) continua disponível, mas tem link variável e depende do PC ligado. O plano Hobby da Vercel é para uso não comercial; para uso real volta a valer a Opção C, com backend corporativo.
+**Fase de protótipo (custo zero):** desde 26/11/2026 o caminho recomendado é a **Vercel + Neon + Gemini** ([VERCEL.md](VERCEL.md)): a API roda embutida numa função do Next, banco e arquivos ficam no Neon (AWS São Paulo), a IA é o Gemini gratuito, e tudo fica atrás do código de acesso com dados fictícios. O plano Hobby da Vercel é para uso não comercial; para uso real volta a valer a Opção C, com backend corporativo.
 
 O procedimento corporativo está em [DEPLOY.md](DEPLOY.md).

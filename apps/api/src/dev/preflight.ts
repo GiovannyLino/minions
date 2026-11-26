@@ -1,5 +1,5 @@
 /**
- * Checagem antes de iniciar (`npm run dev` / `npm run share`): portas livres e banco local sem outra instância.
+ * Checagem antes de iniciar (`npm run dev`): portas livres e banco local sem outra instância.
  * Evita os erros EADDRINUSE e, principalmente, dois processos abrindo o mesmo banco (o que o corrompe).
  */
 import net from 'node:net';
@@ -27,7 +27,7 @@ export function portInUse(port: number): Promise<boolean> {
 export async function preflight(ports = [3000, 4000]): Promise<string[]> {
   const problems: string[] = [];
   for (const port of ports) {
-    if (await portInUse(port)) problems.push(`A porta ${port} já está em uso — provavelmente outro "npm run dev" ou "npm run share" ainda está aberto.`);
+    if (await portInUse(port)) problems.push(`A porta ${port} já está em uso — provavelmente outro "npm run dev" ainda está aberto.`);
   }
   const dataDir = path.resolve(ROOT, 'apps/api', process.env.DATA_DIR ?? '.data', 'pglite');
   try {

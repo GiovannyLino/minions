@@ -7,8 +7,8 @@ import { Orchestrator } from './agents/orchestrator';
 import { AuditService } from './audit/audit';
 import { UserService } from './auth/users';
 import { createOidcVerifier } from './auth/tokens';
-import { HashingEmbeddingProvider, OpenAICompatibleEmbeddingProvider, VoyageEmbeddingProvider, type EmbeddingProvider } from './ai/embeddings';
-import { AnthropicLlmProvider, type LlmProvider } from './ai/llm';
+import { HashingEmbeddingProvider, type EmbeddingProvider } from './ai/embeddings';
+import type { LlmProvider } from './ai/llm';
 import { GeminiEmbeddingProvider, GeminiLlmProvider } from './ai/gemini';
 import { OllamaEmbeddingProvider, OllamaLlmProvider } from './ai/ollama';
 import type { Env } from './config/env';
@@ -73,18 +73,14 @@ export function defaultAgentSettings(env: Env): AgentSettings {
 
 function createEmbeddings(env: Env): EmbeddingProvider {
   switch (env.EMBEDDING_PROVIDER) {
-    case 'voyage':
-      return new VoyageEmbeddingProvider(env.EMBEDDING_API_KEY!, env.EMBEDDING_DIM, env.EMBEDDING_MODEL, env.EMBEDDING_BASE_URL);
     case 'gemini':
       return new GeminiEmbeddingProvider(env.EMBEDDING_DIM, {
-        apiKey: (env.EMBEDDING_API_KEY ?? env.GEMINI_API_KEY)!,
+        apiKey: env.GEMINI_API_KEY!,
         model: env.EMBEDDING_MODEL ?? 'gemini-embedding-001',
         baseUrl: env.EMBEDDING_BASE_URL,
       });
     case 'ollama':
       return new OllamaEmbeddingProvider(env.EMBEDDING_DIM, env.EMBEDDING_MODEL ?? 'nomic-embed-text', env.EMBEDDING_BASE_URL ?? env.OLLAMA_URL);
-    case 'openai':
-      return new OpenAICompatibleEmbeddingProvider(env.EMBEDDING_API_KEY!, env.EMBEDDING_DIM, env.EMBEDDING_MODEL, env.EMBEDDING_BASE_URL);
     default:
       return new HashingEmbeddingProvider(env.EMBEDDING_DIM);
   }
@@ -101,13 +97,11 @@ export async function createMinions(env: Env, overrides: MinionsOverrides = {}):
   const llm =
     overrides.llm !== undefined
       ? overrides.llm
-      : env.LLM_PROVIDER === 'anthropic'
-        ? new AnthropicLlmProvider(env.LLM_MODEL, { apiKey: env.ANTHROPIC_API_KEY, refusalFallback: env.AI_REFUSAL_FALLBACK === 'default', logger })
-        : env.LLM_PROVIDER === 'gemini'
-          ? new GeminiLlmProvider(env.GEMINI_MODEL, { apiKey: env.GEMINI_API_KEY!, logger })
-          : env.LLM_PROVIDER === 'ollama'
-            ? new OllamaLlmProvider(env.OLLAMA_MODEL, { baseUrl: env.OLLAMA_URL, logger })
-            : null;
+      : env.LLM_PROVIDER === 'gemini'
+        ? new GeminiLlmProvider(env.GEMINI_MODEL, { apiKey: env.GEMINI_API_KEY!, logger })
+        : env.LLM_PROVIDER === 'ollama'
+          ? new OllamaLlmProvider(env.OLLAMA_MODEL, { baseUrl: env.OLLAMA_URL, logger })
+          : null;
   const scanner = overrides.scanner ?? (env.MALWARE_SCANNER === 'clamav' ? new ClamAvScanner(env.CLAMAV_HOST, env.CLAMAV_PORT) : new NoopScanner());
 
   const audit = new AuditService(db, logger);
